@@ -157,11 +157,35 @@ defaults:
   ed25519SigningKeyLocation: '/etc/docker-worker-ed25519-cot-signing-key.key'
 
   artifacts:
-    skipCompressionExtensions: [
-      '.7z', '.bz2', '.dmg', '.flv', '.gif', '.gz', '.jpeg', '.jpg', '.png',
-      '.swf', '.tbz', '.tgz', '.webp', '.whl', '.woff', '.woff2',
-      '.xz', '.zip', '.zst',
-    ]
+    skipCompressionExtensions:
+      # This should be kept in sync with generic worker:
+      # https://github.com/taskcluster/taskcluster/blob/main/workers/generic-worker/artifacts.go
+      - .7z
+      - .aar
+      - .apk
+      - .bz2
+      - .deb
+      - .dmg
+      - .flv
+      - .gif
+      - .jar
+      - .jpeg
+      - .jpg
+      - .mar
+      - .png
+      - .snap
+      - .swf
+      - .tar
+      - .tbz
+      - .tgz
+      - .webp
+      - .whl
+      - .woff
+      - .woff2
+      - .xpi
+      - .xz
+      - .zip
+      - .zst
 
   dockerSave:
     expiration: '7 days'

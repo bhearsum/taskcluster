@@ -387,23 +387,32 @@ func resolve(base *BaseArtifact, artifactType string, path string, contentType s
 	if contentEncoding == "" {
 		extension := filepath.Ext(path)
 		// originally based on https://github.com/evansd/whitenoise/blob/03f6ea846394e01cbfe0c730141b81eb8dd6e88a/whitenoise/compress.py#L21-L29
+		// Should be kept in sync with docker worker:
+		// https://github.com/taskcluster/taskcluster/blob/main/workers/docker-worker/config.yml
 		SkipCompressionExtensions := map[string]bool{
 			".7z":    true,
+			".aar":   true,
+			".apk":   true,
 			".bz2":   true,
+			".deb":   true,
 			".dmg":   true,
 			".flv":   true,
 			".gif":   true,
-			".gz":    true,
+			".jar":   true,
 			".jpeg":  true,
 			".jpg":   true,
+			".mar":   true,
 			".png":   true,
+			".snap":  true,
 			".swf":   true,
+			".tar":   true,
 			".tbz":   true,
 			".tgz":   true,
 			".webp":  true,
-			".whl":   true, // Python wheel are already zip file
+			".whl":   true, // Python wheels are zip files
 			".woff":  true,
 			".woff2": true,
+			".xpi":   true,
 			".xz":    true,
 			".zip":   true,
 			".zst":   true,
