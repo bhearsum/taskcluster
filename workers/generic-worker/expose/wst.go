@@ -11,6 +11,7 @@ package expose
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 
@@ -88,11 +89,13 @@ func (exposure *wstExposure) start() error {
 			// logs and interative tasks to stop working part way through tasks.
 			ConnectHook: func(cl *client.Client) {
 				if exposure.isHTTP {
+					log.Print("in connect hook, isHttp");
 					// forward connections via the websocktunnel to the target port; these will all be
 					// HTTP connections
 					go forwardPort(cl, fmt.Sprintf("127.0.0.1:%d", exposure.targetPort))
 				} else {
 					// forward websocket connections at path / to the local port
+					log.Print("in connect hook, !isHttp");
 					server := http.Server{
 						Handler: websocketToTCPHandlerFunc(exposure.targetPort),
 					}

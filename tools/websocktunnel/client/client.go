@@ -1,6 +1,7 @@
 package client
 
 import (
+	"log"
 	"net"
 	"net/http"
 	"sync"
@@ -82,6 +83,7 @@ func New(configurer Configurer) (*Client, error) {
 	}
 	cl.url.Store(url)
 	cl.session = wsmux.Client(conn, wsmux.Config{})
+	log.Printf("New: session is: %v", cl.session)
 	if cl.connectHook != nil {
 		cl.connectHook(cl)
 	}
@@ -102,6 +104,7 @@ func (c *Client) URL() string {
 func (c *Client) Accept() (net.Conn, error) {
 	select {
 	case <-c.closed:
+		log.Printf("Accept, session %v, connection closed", c.session)
 		return nil, ErrClientClosed
 	default:
 	}
@@ -109,6 +112,7 @@ func (c *Client) Accept() (net.Conn, error) {
 	c.m.Lock()
 	defer c.m.Unlock()
 	if c.state == stateBroken || c.state == stateClosed {
+		log.Printf("Accept, session %v, broken or closed", c.session)
 		return nil, c.acceptErr
 	}
 
@@ -123,14 +127,18 @@ func (c *Client) Accept() (net.Conn, error) {
 	// active connections are cleaned up after a server shutdown.
 	// Prior to this, we unknowingly leaked deadlocked goroutines.
 	c.m.Unlock()
+		log.Printf("Accept, session %v, calling accept", c.session)
 	stream, err := c.session.Accept()
+		log.Printf("Accept, session %v, accept returned", c.session)
 	c.m.Lock()
 	if err != nil {
+		log.Printf("Accept, session %v, hit error, reconnecting", c.session)
 		c.state = stateBroken
 		c.acceptErr = ErrClientReconnecting
 		go c.reconnect()
 		return nil, c.acceptErr
 	}
+		log.Printf("Accept, session %v, accept succeeded", c.session)
 	return stream, nil
 }
 
@@ -246,6 +254,7 @@ func (c *Client) reconnect() {
 	}
 
 	if c.session != nil {
+		log.Printf("reconnect, session %v, closing old session", c.session)
 		_ = c.session.Close()
 		c.session = nil
 	}
@@ -255,6 +264,7 @@ func (c *Client) reconnect() {
 		StreamBufferSize: 4 * 1024,
 	}
 	c.session = wsmux.Client(conn, sessionConfig)
+		log.Printf("reconnect, new session is %v", c.session)
 	c.url.Store(url)
 	c.state = stateRunning
 	c.logger.Printf("state: running")
