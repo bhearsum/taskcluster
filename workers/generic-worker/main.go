@@ -88,11 +88,41 @@ func initialiseFeatures() (err error) {
 	Features = append(Features, platformFeatures()...)
 	for _, feature := range Features {
 		log.Printf("Initialising task feature %v...", feature.Name())
+		log.Printf("before initialise %v", feature.Name())
+		entries, bherr := os.ReadDir("/caches")
+		    if bherr != nil { log.Println("couldn't read entries in /caches") }
+		log.Println("entries in cache /caches")
+		for _, e := range entries {
+			log.Printf("%v", e)
+			if e.IsDir() {
+				entries2, bherr2 := os.ReadDir("/caches/" + e.Name())
+				log.Println("entries in cache /caches/subdir")
+		    if bherr2 != nil { log.Println("couldn't read entries in /caches/sbudir") }
+		    for _, e2 := range entries2 {
+			    log.Printf("%v", e2)
+		    }
+	    }
+    }
 		err := feature.Initialise()
 		if err != nil {
 			log.Printf("FATAL: Initialisation of task feature %v failed!", feature.Name())
 			return err
 		}
+		log.Printf("after initialise %v", feature.Name())
+		entries, bherr = os.ReadDir("/caches")
+		    if bherr != nil { log.Println("couldn't read entries in /caches") }
+		log.Println("entries in cache /caches")
+		for _, e := range entries {
+			log.Printf("%v", e)
+			if e.IsDir() {
+				entries2, bherr2 := os.ReadDir("/caches/" + e.Name())
+				log.Println("entries in cache /caches/subdir")
+		    if bherr2 != nil { log.Println("couldn't read entries in /caches/sbudir") }
+		    for _, e2 := range entries2 {
+			    log.Printf("%v", e2)
+		    }
+	    }
+    }
 	}
 	log.Print("All features initialised.")
 	return nil
@@ -104,6 +134,20 @@ func init() {
 
 // Entry point into the generic worker...
 func main() {
+		entries, bherr := os.ReadDir("/caches")
+		    if bherr != nil { log.Println("couldn't read entries in /caches") }
+		log.Println("entries in cache /caches")
+		for _, e := range entries {
+			log.Printf("%v", e)
+			if e.IsDir() {
+				entries2, bherr2 := os.ReadDir("/caches/" + e.Name())
+				log.Println("entries in cache /caches/subdir")
+		    if bherr2 != nil { log.Println("couldn't read entries in /caches/sbudir") }
+		    for _, e2 := range entries2 {
+			    log.Printf("%v", e2)
+		    }
+			}
+		}
 	versionName := "generic-worker (" + engine + " engine) " + version
 	if revision != "" {
 		versionName += " [ revision: https://github.com/taskcluster/taskcluster/commits/" + revision + " ]"
@@ -415,9 +459,37 @@ func RunWorker() (exitCode ExitCode) {
 	lastReportedNoTasks := time.Now()
 	sigInterrupt := make(chan os.Signal, 1)
 	signal.Notify(sigInterrupt, os.Interrupt)
+		entries, bherr := os.ReadDir("/caches")
+		    if bherr != nil { log.Println("couldn't read entries in /caches") }
+		log.Println("entries in cache /caches before rotate task env")
+		for _, e := range entries {
+			log.Printf("%v", e)
+			if e.IsDir() {
+				entries2, bherr2 := os.ReadDir("/caches/" + e.Name())
+				log.Println("entries in cache /caches/subdir")
+		    if bherr2 != nil { log.Println("couldn't read entries in /caches/sbudir") }
+		    for _, e2 := range entries2 {
+			    log.Printf("%v", e2)
+		    }
+			}
+		}
 	if RotateTaskEnvironment() {
 		return REBOOT_REQUIRED
 	}
+		entries, bherr = os.ReadDir("/caches")
+		    if bherr != nil { log.Println("couldn't read entries in /caches") }
+		log.Println("entries in cache /caches after rotate task env")
+		for _, e := range entries {
+			log.Printf("%v", e)
+			if e.IsDir() {
+				entries2, bherr2 := os.ReadDir("/caches/" + e.Name())
+				log.Println("entries in cache /caches/subdir")
+		    if bherr2 != nil { log.Println("couldn't read entries in /caches/sbudir") }
+		    for _, e2 := range entries2 {
+			    log.Printf("%v", e2)
+		    }
+			}
+		}
 	err = validateGenericWorkerBinary()
 	if err != nil {
 		log.Printf("Invalid generic-worker binary: %v", err)
@@ -446,6 +518,21 @@ func RunWorker() (exitCode ExitCode) {
 		}
 
 		task := ClaimWork()
+		log.Println("after claiming working")
+		entries, bherr := os.ReadDir("/caches")
+		    if bherr != nil { log.Println("couldn't read entries in /caches") }
+		log.Println("entries in cache /caches")
+		for _, e := range entries {
+			log.Printf("%v", e)
+			if e.IsDir() {
+				entries2, bherr2 := os.ReadDir("/caches/" + e.Name())
+				log.Println("entries in cache /caches/subdir")
+		    if bherr2 != nil { log.Println("couldn't read entries in /caches/sbudir") }
+		    for _, e2 := range entries2 {
+			    log.Printf("%v", e2)
+		    }
+	    }
+    }
 
 		// make sure at least 5 seconds pass between tcqueue.ClaimWork API calls
 		wait5Seconds := time.NewTimer(time.Second * 5)
@@ -985,9 +1072,41 @@ func (task *TaskRun) Run() (err *ExecutionErrors) {
 		if task.Payload.Features.BackingLog {
 			err.add(task.uploadLog(task.Payload.Logs.Backing, filepath.Join(taskContext.TaskDir, logPath)))
 		}
+		log.Println("before cleanup taskdir")
+		entries, bherr := os.ReadDir("/caches")
+		    if bherr != nil { log.Println("couldn't read entries in /caches") }
+		log.Println("entries in cache /caches")
+		for _, e := range entries {
+			log.Printf("%v", e)
+			if e.IsDir() {
+				entries2, bherr2 := os.ReadDir("/caches/" + e.Name())
+				log.Println("entries in cache /caches/subdir")
+		    if bherr2 != nil { log.Println("couldn't read entries in /caches/sbudir") }
+		    for _, e2 := range entries2 {
+			    log.Printf("%v", e2)
+		    }
+	    }
+    }
+
 		if config.CleanUpTaskDirs {
 			_ = os.Remove(filepath.Join(taskContext.TaskDir, logPath))
 		}
+		log.Println("after cleanup taskdir")
+		entries, bherr = os.ReadDir("/caches")
+		    if bherr != nil { log.Println("couldn't read entries in /caches") }
+		log.Println("entries in cache /caches")
+		for _, e := range entries {
+			log.Printf("%v", e)
+			if e.IsDir() {
+				entries2, bherr2 := os.ReadDir("/caches/" + e.Name())
+				log.Println("entries in cache /caches/subdir")
+		    if bherr2 != nil { log.Println("couldn't read entries in /caches/sbudir") }
+		    for _, e2 := range entries2 {
+			    log.Printf("%v", e2)
+		    }
+	    }
+    }
+
 	}()
 
 	task.logHeader()

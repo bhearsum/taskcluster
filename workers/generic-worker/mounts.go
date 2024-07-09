@@ -379,9 +379,42 @@ func (taskMount *TaskMount) initIndexClient() {
 // result of a compilation, which is slow, whereas downloading files is
 // relatively quick in comparison.
 func garbageCollection() error {
+		log.Println("before gc")
+		entries, bherr := os.ReadDir("/caches")
+		    if bherr != nil { log.Println("couldn't read entries in /caches") }
+		log.Println("entries in cache /caches")
+		for _, e := range entries {
+			log.Printf("%v", e)
+			if e.IsDir() {
+				entries2, bherr2 := os.ReadDir("/caches/" + e.Name())
+				log.Println("entries in cache /caches/subdir")
+		    if bherr2 != nil { log.Println("couldn't read entries in /caches/sbudir") }
+		    for _, e2 := range entries2 {
+			    log.Printf("%v", e2)
+		    }
+	    }
+		    }
+
 	r := fileCaches.SortedResources()
 	r = append(r, directoryCaches.SortedResources()...)
-	return runGarbageCollection(r)
+	ret := runGarbageCollection(r)
+		log.Println("after gc")
+		entries, bherr = os.ReadDir("/caches")
+		    if bherr != nil { log.Println("couldn't read entries in /caches") }
+		log.Println("entries in cache /caches")
+		for _, e := range entries {
+			log.Printf("%v", e)
+			if e.IsDir() {
+				entries2, bherr2 := os.ReadDir("/caches/" + e.Name())
+				log.Println("entries in cache /caches/subdir")
+		    if bherr2 != nil { log.Println("couldn't read entries in /caches/sbudir") }
+		    for _, e2 := range entries2 {
+			    log.Printf("%v", e2)
+		    }
+	    }
+		    }
+
+	return ret
 }
 
 // called when a task starts
@@ -506,11 +539,48 @@ func (w *WritableDirectoryCache) Mount(taskMount *TaskMount) error {
 		src := directoryCaches[w.CacheName].Location
 		parentDir := filepath.Dir(target)
 		taskMount.Infof("Moving existing writable directory cache %v from %v to %v", w.CacheName, src, target)
+		// sometime before this we've managed to lose the `.cache` files
+		entries, bherr := os.ReadDir(src)
+		    if bherr != nil { taskMount.Infof("couldn't read entries in src") }
+		taskMount.Infof("entries in cache src:")
+		for _, e := range entries {
+			taskMount.Infof("%v", e)
+		}
+		entries, bherr = os.ReadDir(target)
+		    if bherr != nil { taskMount.Infof("couldn't read entries in target") }
+		taskMount.Infof("entries in cache target:")
+		for _, e := range entries {
+			taskMount.Infof("%v", e)
+		}
+		entries, bherr = os.ReadDir(parentDir)
+		    if bherr != nil { taskMount.Infof("couldn't read entries in parentDir") }
+		taskMount.Infof("entries in cache parentDir:")
+		for _, e := range entries {
+			taskMount.Infof("%v", e)
+		}
+		taskMount.Infof("creating parent dir %v", parentDir)
 		err := MkdirAll(taskMount, parentDir)
 		if err != nil {
 			return fmt.Errorf("[mounts] Not able to create directory %v: %v", parentDir, err)
 		}
+		taskMount.Infof("renaming")
 		err = RenameCrossDevice(src, target)
+		taskMount.Infof("entries in cache src:")
+		for _, e := range entries {
+			taskMount.Infof("%v", e)
+		}
+		entries, bherr = os.ReadDir(target)
+		    if bherr != nil { taskMount.Infof("couldn't read entries in target") }
+		taskMount.Infof("entries in cache target:")
+		for _, e := range entries {
+			taskMount.Infof("%v", e)
+		}
+		entries, bherr = os.ReadDir(parentDir)
+		    if bherr != nil { taskMount.Infof("couldn't read entries in parentDir") }
+		taskMount.Infof("entries in cache parentDir:")
+		for _, e := range entries {
+			taskMount.Infof("%v", e)
+		}
 		if err != nil {
 			panic(fmt.Errorf("[mounts] Not able to rename dir %v as %v: %v", src, target, err))
 		}
@@ -560,9 +630,47 @@ func (w *WritableDirectoryCache) Unmount(taskMount *TaskMount) error {
 	cache := directoryCaches[w.CacheName]
 	cacheDir := cache.Location
 	taskCacheDir := filepath.Join(taskContext.TaskDir, w.Directory)
+	taskMount.Infof("before preserve")
+		entries, bherr := os.ReadDir(taskCacheDir)
+		    if bherr != nil { taskMount.Infof("couldn't read entries in src") }
+		taskMount.Infof("entries in cache src:")
+		for _, e := range entries {
+			taskMount.Infof("%v", e)
+		}
+		entries, bherr = os.ReadDir(cacheDir)
+		    if bherr != nil { taskMount.Infof("couldn't read entries in target") }
+		taskMount.Infof("entries in cache target:")
+		for _, e := range entries {
+			taskMount.Infof("%v", e)
+		}
 	taskMount.Infof("Preserving cache: Moving %q to %q", taskCacheDir, cacheDir)
 	err := RenameCrossDevice(taskCacheDir, cacheDir)
+		entries, bherr = os.ReadDir(taskCacheDir)
+		    if bherr != nil { taskMount.Infof("couldn't read entries in src") }
+		taskMount.Infof("entries in cache src:")
+		for _, e := range entries {
+			taskMount.Infof("%v", e)
+		}
+		entries, bherr = os.ReadDir(cacheDir)
+		    if bherr != nil { taskMount.Infof("couldn't read entries in target") }
+		taskMount.Infof("entries in cache target:")
+		for _, e := range entries {
+			taskMount.Infof("%v", e)
+		}
 	if err != nil {
+		taskMount.Infof("err!")
+		entries, bherr = os.ReadDir(taskCacheDir)
+		    if bherr != nil { taskMount.Infof("couldn't read entries in src") }
+		taskMount.Infof("entries in cache src:")
+		for _, e := range entries {
+			taskMount.Infof("%v", e)
+		}
+		entries, bherr = os.ReadDir(cacheDir)
+		    if bherr != nil { taskMount.Infof("couldn't read entries in target") }
+		taskMount.Infof("entries in cache target:")
+		for _, e := range entries {
+			taskMount.Infof("%v", e)
+		}
 		// An error can occur for several reasons:
 		//
 		// Task problems:

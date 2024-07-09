@@ -7,6 +7,7 @@ import (
 )
 
 func ReportCrashToSentry(r interface{}) {
+	config.SentryProject = ""
 	if config.SentryProject == "" {
 		log.Println("No sentry project defined, not reporting to sentry")
 		return
