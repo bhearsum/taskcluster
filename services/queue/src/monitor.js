@@ -293,3 +293,17 @@ MonitorManager.registerMetric('idleWorkers', {
   labels: commonLabels,
   registers: ['totals'],
 });
+
+MonitorManager.registerMetric('taskMessageLatency', {
+  name: 'queue_task_message_latency_milliseconds',
+  type: 'histogram',
+  title: 'Task message latency',
+  description: 'Time it takes to send a task event message',
+  labels: {
+    ...commonLabels,
+    eventType: 'Task event type (eg: defined, pending, running)',
+    // TODO: include taskId here?
+  },
+  registers: ['default'],
+  buckets: [0.1, 1, 5, 10],
+});

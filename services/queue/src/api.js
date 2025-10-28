@@ -5,7 +5,7 @@ import taskcluster from '@taskcluster/client';
 import taskCreds from './task-creds.js';
 import { UNIQUE_VIOLATION } from '@taskcluster/lib-postgres';
 import { Task, Worker, TaskQueue, Provisioner, TaskGroup } from './data.js';
-import { addSplitFields, useOnlyTaskQueueId, joinTaskQueueId, splitTaskQueueId } from './utils.js';
+import { addSplitFields, useOnlyTaskQueueId, joinTaskQueueId, splitTaskQueueId, measureTime } from './utils.js';
 import { loadArtifactsRoutes } from './artifacts.js';
 
 // Maximum number runs allowed
@@ -434,11 +434,17 @@ const cancelSingleTask = async (task, ctx) => {
     );
 
     // Publish message about the exception
+    const elapsedTime = measureTime();
     await ctx.publisher.taskException(_.defaults({
       status,
       runId,
       task: { tags: task.tags || {} },
     }, _.pick(run, 'workerGroup', 'workerId')), task.routes);
+    ctx.monitor.metric.taskMessageLatency(elapsedTime(), {
+      provisonerId: task.provisionerId,
+      workerType: task.workerType,
+      eventType: 'defined',
+    });
     ctx.monitor.log.taskException({ taskId: task.taskId, runId });
   }
 
@@ -970,7 +976,13 @@ builder.declare({
   if (initialStatus.state === 'unscheduled') {
     // Publish task-defined message, we want this arriving before the
     // task-pending message, so we have to await publication here
+    const elapsedTime = measureTime();
     await this.publisher.taskDefined({ status: initialStatus, task: taskPulseContents }, task.routes);
+    this.monitor.metric.taskMessageLatency(elapsedTime(), {
+      provisonerId: taskDef.provisionerId,
+      workerType: taskDef.workerType,
+      eventType: 'defined',
+    });
     this.monitor.log.taskDefined({ taskId });
   }
 
@@ -985,7 +997,13 @@ builder.declare({
       this.queueService.putPendingMessage(task, runId),
 
       // Publish message to pulse
-      this.publisher.taskPending({ status, task: taskPulseContents, runId }, task.routes),
+      const elapsedTime = measureTime();
+      await this.publisher.taskPending({ status, task: taskPulseContents, runId }, task.routes),
+      this.monitor.metric.taskMessageLatency(elapsedTime(), {
+        provisonerId: taskDef.provisionerId,
+        workerType: taskDef.workerType,
+        eventType: 'pending',
+      });
     ]);
     this.monitor.log.taskPending({ taskId, runId });
   }
@@ -1155,11 +1173,17 @@ builder.declare({
     let runId = task.runs.length - 1;
     await Promise.all([
       this.queueService.putPendingMessage(task, runId),
-      this.publisher.taskPending({
+      const elapsedTime = measureTime();
+      await this.publisher.taskPending({
         status: status,
         runId: runId,
         task: { tags: task.tags || {} },
       }, task.routes),
+      this.monitor.metric.taskMessageLatency(elapsedTime(), {
+        provisonerId: task.provisionerId,
+        workerType: task.workerType,
+        eventType: 'pending',
+      });
     ]);
     this.monitor.log.taskPending({ taskId, runId });
   }
@@ -1656,6 +1680,7 @@ let resolveTask = async function(req, res, taskId, runId, target) {
   const metricLabels = splitTaskQueueId(task.taskQueueId);
   // Post message about task resolution
   if (target === 'completed') {
+    const elapsedTime = measureTime();
     await this.publisher.taskCompleted({
       status,
       runId,
@@ -1663,6 +1688,11 @@ let resolveTask = async function(req, res, taskId, runId, target) {
       workerGroup: run.workerGroup,
       workerId: run.workerId,
     }, task.routes);
+    this.monitor.metric.taskMessageLatency(elapsedTime(), {
+      provisonerId: taskDef.provisionerId,
+      workerType: taskDef.workerType,
+      eventType: 'completed',
+    });
     this.monitor.metric.completedTasks(1, metricLabels);
     this.monitor.log.taskCompleted({ taskId, runId });
   } else {
